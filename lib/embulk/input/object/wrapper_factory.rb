@@ -18,7 +18,7 @@ class WrapperFactory
     when "list_membership" then
       return ListMembershipWrapper.new user_name, password, user_key
     else
-      return PardotObjectWrapper.new
+      return ObjectWrapper.new
     end
   end
 end

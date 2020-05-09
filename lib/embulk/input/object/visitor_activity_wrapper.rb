@@ -1,29 +1,64 @@
 require 'ruby-pardot'
-require_relative 'pardot_object_wrapper'
+require_relative 'object_wrapper'
 
-class VisitorActivityWrapper < PardotObjectWrapper
+class VisitorActivityWrapper < ObjectWrapper
+
 
   def initialize(user_name, password, user_key)
     @client = Pardot::Client.new user_name, password, user_key, 4
     @client.format = "full"
+    @type_map = {
+        "1" => "Click",
+        "2" => "View",
+        "3" => "Error",
+        "4" => "Success",
+        "5" => "Session",
+        "6" => "Sent",
+        "7" => "Search",
+        "8" => "New Opportunity",
+        "9" => "Opportunity Won",
+        "10" => "Opportunity Lost",
+        "11" => "Open",
+        "12" => "Unsubscribe Page",
+        "13" => "Bounced",
+        "14" => "Spam Complaint",
+        "15" => "Email Preference Page",
+        "16" => "Resubscribed",
+        "17" => "Click (Third Party)",
+        "18" => "Opportunity Reopened",
+        "19" => "Opportunity Linked",
+        "20" => "Visit",
+        "21" => "Custom URL click",
+        "22" => "Olark Chat",
+        "23" => "Invited to Webinar",
+        "24" => "Attended Webinar",
+        "25" => "Registered for Webinar",
+        "26" => "Social Post Click",
+        "27" => "Video View",
+        "28" => "Event Registered",
+        "29" => "Event Checked In",
+        "30" => "Video Conversion",
+        "31" => "UserVoice Suggestion",
+        "32" => "UserVoice Comment",
+        "33" => "UserVoice Ticket",
+        "34" => "Video Watched (≥ 75% watched)",
+        "35" => "Indirect Unsubscribe Open",
+        "36" => "Indirect Bounce",
+        "37" => "Indirect Resubscribed",
+        "38" => "Opportunity Unlinked",
+    }
   end
 
-  def query(search_criteria, logger)
-    counts = 200
-    offset = 0
-    result = []
-    while counts > 0 do
-      search_criteria[:offset] = offset
-      response = @client.visitor_activities.query(search_criteria)
-      if offset == 0 then
-        counts = response["total_results"]
+  def query_each(search_criteria)
+    response = @client.visitor_activities.query(search_criteria)
+    if response.has_key?("visitor_activity") then
+      response["visitor_activity"].each do |activity|
+        activity["type"] = @type_map.has_key?(activity["type"]) ? @type_map[activity["type"]] : "Other"
       end
-      logger.info "query (remain %s)" % (counts)
-      counts -= 200
-      offset += 200
-      result += response["visitor_activity"]
+      return response["total_results"], response["visitor_activity"]
+    else
+      return response["total_results"], []
     end
-    return result
   end
 
   def get_profile
@@ -31,7 +66,7 @@ class VisitorActivityWrapper < PardotObjectWrapper
         {:name => "id", :type => :long},
         {:name => "prospect_id", :type => :long},
         {:name => "visitor_id", :type => :long},
-        {:name => "type", :type => :long},
+        {:name => "type", :type => :string},
         {:name => "type_name", :type => :string},
         {:name => "details", :type => :string},
         {:name => "email_id", :type => :long},

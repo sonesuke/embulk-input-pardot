@@ -1,31 +1,16 @@
 require 'ruby-pardot'
-require_relative 'pardot_object_wrapper'
+require_relative 'object_wrapper'
 
-class VisitorWrapper < PardotObjectWrapper
+class VisitorWrapper < ObjectWrapper
 
   def initialize(user_name, password, user_key)
     @client = Pardot::Client.new user_name, password, user_key, 4
     @client.format = "full"
   end
 
-  def query(search_criteria, logger)
-    counts = 200
-    offset = 0
-    result = []
-    while counts > 0 do
-      search_criteria[:offset] = offset
-      response = @client.visitors.query(search_criteria)
-      if offset == 0 then
-        counts = response["total_results"]
-      end
-      logger.info "query (remain %s)" % (counts)
-      counts -= 200
-      offset += 200
-      if response.has_key?("visitor") then
-        result += response["visitor"]
-      end
-    end
-    return result
+  def query_each(search_criteria)
+    response = @client.visitors.query(search_criteria)
+    return response["total_results"], response.has_key?("visitor") ? response["visitor"]: []
   end
 
   def get_profile

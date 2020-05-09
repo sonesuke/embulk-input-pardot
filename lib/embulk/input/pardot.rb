@@ -14,31 +14,36 @@ module Embulk
             "password" => config.param("password", :string), # string, required
             "user_key" => config.param("user_key", :string), # string, required
             "object" => config.param("object", :string), # string, required
-            "from_datetime" => config.param("from_datetime", :string, default: nil),
+            "from_date" => config.param("from_date", :string, default: nil),
+            "skip_columns" => config.param("skip_columns", :array, default: []),
             "columns" => config.param("columns", :array, default: []),
         }
-        columns = []
-        if task["columns"].size > 0 then
-          task["columns"].each_with_index do |column, i|
-            columns << Column.new(i, column['name'], column['type'].to_sym)
-          end
-        else
-          Embulk.logger.info "Query profile"
-          wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"]
-          fields = wrapper.get_profile()
-          fields.each_with_index do |field, i|
-            columns << Column.new(i, field[:name], field[:type])
-          end
-        end
+        columns = task["columns"].size > 0 ? create_from_config(task) : create_from_profile(task)
         resume(task, columns, 1, &control)
       end
 
       def self.resume(task, columns, count, &control)
         task_reports = yield(task, columns, count)
         task_report = task_reports.first
-        next_to_date = Time.parse(task_report[:to_datetime])
-        next_config_diff = {from_datetime: next_to_date.to_s}
+        next_to_date = Time.parse(task_report[:to_date])
+        next_config_diff = {from_date: next_to_date.to_s}
         return next_config_diff
+      end
+
+      def self.create_from_config(task)
+        return task["columns"].map.with_index { |column, i| Column.new(i, column['name'], column['type'].to_sym) }
+      end
+
+      def self.create_from_profile(task)
+        Embulk.logger.info "Query profile"
+        wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"]
+        fields = wrapper.get_profile()
+        if not task["skip_columns"].nil? then
+          task["skip_columns"].each do | skip_column |
+            fields = fields.select {|field| not /#{skip_column["pattern"]}/.match(field[:name])}
+          end
+        end
+        return fields.map.with_index { |field, i| Column.new(i, field[:name], field[:type]) }
       end
 
       # TODO
@@ -61,50 +66,42 @@ module Embulk
       def run
         wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"]
         execution_at = Time.now
-        if task["from_datetime"].nil? then
-          search_criteria = {}
-        else
-          search_criteria = {:updated_after => Time.parse(task["from_datetime"]).strftime("%Y-%m-%d %H:%M:%S")}
-        end
+        search_criteria = task["from_date"].nil? ? {} : {:updated_after => Time.parse(task["from_date"]).strftime("%Y-%m-%d %H:%M:%S")}
         rows = wrapper.query(search_criteria, Embulk.logger)
 
         rows.each do |row|
-          result = []
-          schema.each do |column|
-            if not row.has_key?(column.name) then
-              result << nil
-            elsif row[column.name].nil? then
-              result << nil
-            else
-              begin
-                case column.type
-                when :boolean then
-                  result << row[column.name].downcase == "1"
-                when :timestamp then
-                  if row[column.name].size > 10 then
-                    result << Time.strptime(row[column.name], "%Y-%m-%d %H:%M:%S").to_i
-                  else
-                    result << Time.strptime(row[column.name], "%Y-%m-%d").to_i
-                  end
-                when :double then
-                  result << row[column.name].to_f
-                else
-                  result << row[column.name]
-                end
-              rescue
-                Embulk.logger.info "error occured"
-                result << nil
-              end
-            end
-          end
+          result = schema.map { |column| evaluate_column(column, row) }
           page_builder.add(result)
         end
         page_builder.finish
 
-        task_report = {to_datetime: execution_at}
+        task_report = {to_date: execution_at}
         return task_report
       end
-    end
 
+
+      def evaluate_column(column, row)
+        if not row.has_key?(column.name) or row[column.name].nil? then
+          return nil
+        end
+
+        begin
+          value = row[column.name]
+          case column.type
+          when :boolean then
+            return value.downcase == "1"
+          when :timestamp then
+            return value.size > 10 ? Time.strptime(value, "%Y-%m-%d %H:%M:%S").to_i : Time.strptime(value, "%Y-%m-%d").to_i
+          else
+            return value
+          end
+        rescue
+          Embulk.logger.info "error occurred"
+          return nil
+        end
+      end
+
+
+    end
   end
 end
