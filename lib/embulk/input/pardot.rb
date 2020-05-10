@@ -1,4 +1,5 @@
 require 'time'
+require 'tzinfo'
 require_relative 'object/wrapper_factory'
 
 module Embulk
@@ -14,6 +15,7 @@ module Embulk
             "password" => config.param("password", :string), # string, required
             "user_key" => config.param("user_key", :string), # string, required
             "object" => config.param("object", :string), # string, required
+            "timezone" => config.param("timezone", :string), #string, required
             "from_date" => config.param("from_date", :string, default: nil),
             "skip_columns" => config.param("skip_columns", :array, default: []),
             "columns" => config.param("columns", :array, default: []),
@@ -66,7 +68,11 @@ module Embulk
       def run
         wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"]
         execution_at = Time.now
-        search_criteria = task["from_date"].nil? ? {} : {:updated_after => Time.parse(task["from_date"]).strftime("%Y-%m-%d %H:%M:%S")}
+        search_criteria = {}
+        if not task["from_date"].nil? then
+          tz = TZInfo::Timezone.get(task["timezone"])
+          search_criteria[:updated_after] = tz.to_local(Time.parse(task["from_date"])).strftime("%Y-%m-%d %H:%M:%S")
+        end
         rows = wrapper.query(search_criteria, Embulk.logger)
 
         rows.each do |row|
@@ -96,12 +102,10 @@ module Embulk
             return value
           end
         rescue
-          Embulk.logger.info "error occurred"
+          Embulk.logger.info "#{column.name}:#{row[column.name]} is relaced by null."
           return nil
         end
       end
-
-
     end
   end
 end
