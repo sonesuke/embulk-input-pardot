@@ -16,10 +16,10 @@ class ObjectWrapper
     if m then
       logger.info "proxy: addr:#{m[3]}, port:#{m[4]}, id:#{m[1]}, pass:*****"
       Pardot::Client.http_proxy(
-          user=m[1],
-          pass=m[2],
           addr=m[3],
-          port=m[4]
+          port=m[4],
+          user=m[1],
+          pass=m[2]
       )
       return
     end
