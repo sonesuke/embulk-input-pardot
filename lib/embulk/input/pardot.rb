@@ -16,6 +16,7 @@ module Embulk
             "user_key" => config.param("user_key", :string), # string, required
             "object" => config.param("object", :string), # string, required
             "timezone" => config.param("timezone", :string), #string, required
+            "updated_after" => config.param("updated_after", :string, default: nil), # string
             "from_date" => config.param("from_date", :string, default: nil),
             "skip_columns" => config.param("skip_columns", :array, default: []),
             "columns" => config.param("columns", :array, default: []),
@@ -38,7 +39,7 @@ module Embulk
 
       def self.create_from_profile(task)
         Embulk.logger.info "Query profile"
-        wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"]
+        wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"], Embulk.logger
         fields = wrapper.get_profile()
         if not task["skip_columns"].nil? then
           task["skip_columns"].each do | skip_column |
@@ -66,12 +67,15 @@ module Embulk
       end
 
       def run
-        wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"]
+        wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"], Embulk.logger
         execution_at = Time.now
         search_criteria = {}
         if not task["from_date"].nil? then
           tz = TZInfo::Timezone.get(task["timezone"])
           search_criteria[:updated_after] = tz.to_local(Time.parse(task["from_date"])).strftime("%Y-%m-%d %H:%M:%S")
+        end
+        if not task["updated_after"].nil? then
+          search_criteria[:updated_after] = task["updated_after"]
         end
         rows = wrapper.query(search_criteria, Embulk.logger)
 

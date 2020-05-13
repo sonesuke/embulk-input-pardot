@@ -16,6 +16,7 @@ TODO: Write short description here and embulk-input-pardot.gemspec file.
 - **uesr_key**: Pardot's user key (string, required)
 - **timezone**: Pardot's timezone (string, required)
 - **object**: Object what you want to fetch. Please select an object from Object section.(string, required)
+- **updated_after**: Search range which is used in search criteria. (string, optional)
 - **skip_columns**: Columns what you want to skip. Pleae see the following section for the detail. (Array)
 - **columns**: Columns what you want to select. If nothing, the default is all columns.(Array)  
 

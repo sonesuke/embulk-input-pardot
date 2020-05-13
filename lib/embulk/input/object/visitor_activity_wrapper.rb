@@ -3,11 +3,8 @@ require_relative 'object_wrapper'
 
 class VisitorActivityWrapper < ObjectWrapper
 
-
-  def initialize(user_name, password, user_key)
-    @client = Pardot::Client.new user_name, password, user_key, 4
-    @client.format = "full"
-    @type_map = {
+  def type_map
+    return {
         "1" => "Click",
         "2" => "View",
         "3" => "Error",
@@ -53,7 +50,7 @@ class VisitorActivityWrapper < ObjectWrapper
     response = @client.visitor_activities.query(search_criteria)
     if response.has_key?("visitor_activity") then
       response["visitor_activity"].each do |activity|
-        activity["type"] = @type_map.has_key?(activity["type"]) ? @type_map[activity["type"]] : "Other"
+        activity["type"] = type_map.has_key?(activity["type"]) ? type_map[activity["type"]] : "Other"
       end
       return response["total_results"], response["visitor_activity"]
     else

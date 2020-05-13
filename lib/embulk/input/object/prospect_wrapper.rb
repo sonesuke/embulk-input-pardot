@@ -3,11 +3,6 @@ require_relative 'object_wrapper'
 
 class ProspectWrapper < ObjectWrapper
 
-  def initialize(user_name, password, user_key)
-    @client = Pardot::Client.new user_name, password, user_key, 4
-    @client.format = "full"
-  end
-
   def query_each(search_criteria)
     response = @client.prospects.query(search_criteria)
     return response["total_results"], response.has_key?("prospect") ? response["prospect"]: []
