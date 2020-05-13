@@ -15,14 +15,9 @@ jobs:
     - name: build
       run: docker-compose run dev sh build.sh
 
-    - name: Extract tag name
-      id: tag
-      uses: actions/github-script@0.2.0
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          return context.payload.ref.replace(/\/refs\/tags\//, '');
-            run: echo
+    - name: Get the version
+      id: get_version
+      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
 
     - name: Create release
       id: create_release
@@ -42,6 +37,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./pkg/embulk-input-pardot-${{ steps.tag.outputs.result }}.gem
-        asset_name: embulk-input-pardot-${{ steps.tag.outputs.result }}.gem
+        asset_path: ./pkg/embulk-input-pardot-${{ steps.get_version.outputs.VERSION }}.gem
+        asset_name: embulk-input-pardot-${{ steps.get_version.outputs.VERSION }}.gem
         asset_content_type: application/zip
