@@ -1,0 +1,13 @@
+version: '3'
+services:
+  dev:
+    build:
+      context: ./docker
+    environment:
+      PARDOT_USER_NAME: ${PARDOT_USER_NAME}
+      PARDOT_PASSWORD: ${PARDOT_PASSWORD}
+      PARDOT_USER_KEY: ${PARDOT_USER_KEY}
+    volumes:
+      - ./:/embulk-input-pardot
+    working_dir: /embulk-input-pardot
+    command: ['sh', 'build.sh']

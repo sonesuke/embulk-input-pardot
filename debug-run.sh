@@ -1,0 +1,1 @@
+embulk run -L /embulk-input-pardot config.yml.liquid -c confing.diff.yml
