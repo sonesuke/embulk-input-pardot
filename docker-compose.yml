@@ -10,3 +10,4 @@ services:
     volumes:
       - ./:/embulk-input-pardot
     working_dir: /embulk-input-pardot
+    command: ['sh', 'build.sh']
