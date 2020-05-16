@@ -59,7 +59,7 @@ class VisitorActivityWrapper < ObjectWrapper
   end
 
   def get_profile
-    result = [
+    [
         {:name => "id", :type => :long},
         {:name => "prospect_id", :type => :long},
         {:name => "visitor_id", :type => :long},
@@ -80,8 +80,6 @@ class VisitorActivityWrapper < ObjectWrapper
         {:name => "custom_redirect_id", :type => :long},
         {:name => "created_at", :type => :timestamp},
     ]
-
-    return result
   end
 end
 

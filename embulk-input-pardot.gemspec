@@ -1,7 +1,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "embulk-input-pardot"
-  spec.version       = "0.1.4"
+  spec.version       = "0.1.5"
   spec.authors       = [""]
   spec.summary       = "Pardot input plugin for Embulk"
   spec.description   = "Loads records from Pardot."

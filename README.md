@@ -16,9 +16,18 @@ TODO: Write short description here and embulk-input-pardot.gemspec file.
 - **uesr_key**: Pardot's user key (string, required)
 - **timezone**: Pardot's timezone (string, required)
 - **object**: Object what you want to fetch. Please select an object from Object section.(string, required)
-- **updated_after**: Search range which is used in search criteria. (string, optional)
 - **skip_columns**: Columns what you want to skip. Pleae see the following section for the detail. (Array)
 - **columns**: Columns what you want to select. If nothing, the default is all columns.(Array)  
+
+## Run
+
+The concurrent capacity of Pardot API is up to 5.
+If your local thread executor suggests `max_threads` above to 5,
+please tell the limit to embulk like the following.
+
+```
+embulk -J-Dembulk.max_threads=4 run  config.yml
+```
 
 ## Object
 
@@ -51,7 +60,7 @@ in:
   timezone: Asia/Tokyo
   object: prospect
   skip_columns:
-    - {pattern: .*name}
+    - {pattern: .*name, ignore: [visitor, prospect]}
     - {pattern: email}
 ```
 

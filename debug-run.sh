@@ -1,1 +1,1 @@
-embulk run -L /embulk-input-pardot config.yml.liquid -c confing.diff.yml
+embulk -J-Dembulk.max_threads=4 run -L /embulk-input-pardot config.yml.liquid -c confing.diff.yml

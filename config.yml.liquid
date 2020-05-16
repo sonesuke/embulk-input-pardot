@@ -5,5 +5,8 @@ in:
   user_key: {{ env.PARDOT_USER_KEY }}
   timezone: Asia/Tokyo
   object: prospect
+  skip_columns:
+    - {pattern: .*name}
+    - {pattern: email, ignore: [visitor, prospect]}
 out:
   type: stdout

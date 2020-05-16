@@ -71,7 +71,7 @@ class ProspectWrapper < ObjectWrapper
         result << {:name => custom_field["field_id"], :type => :string}
       end
     end
-    return result
+    result
   end
 end
 

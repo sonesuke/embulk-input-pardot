@@ -1,3 +1,4 @@
+require 'uri'
 
 class ObjectWrapper
 
@@ -11,51 +12,22 @@ class ObjectWrapper
     if not ENV.has_key?("http_proxy") then
       return
     end
-
-    m = /http:\/\/([^:]+):([^@]+)@([^:]+):([0-9]+)/.match(ENV["http_proxy"])
-    if m then
-      logger.info "proxy: addr:#{m[3]}, port:#{m[4]}, id:#{m[1]}, pass:*****"
-      Pardot::Client.http_proxy(
-          addr=m[3],
-          port=m[4],
-          user=m[1],
-          pass=m[2]
-      )
-      return
-    end
-
-    m = /http:\/\/([^:]+):([0-9]+)/.match(ENV["http_proxy"])
-    if m then
-      logger.info "proxy: addr:#{m[1]}, port:#{m[2]}"
-      Pardot::Client.http_proxy(
-          addr=m[1],
-          port=m[2]
-      )
-      return
-    end
+    parsed = URI.parse(ENV["http_proxy"])
+    logger.info "proxy: addr:#{parsed.host}, port:#{parsed.port}, id:#{parsed.user}, pass:*****"
+    Pardot::Client.http_proxy(parsed.host, parsed.port, parsed.user,parsed.password)
   end
 
   def query(search_criteria, logger)
-    offset = 0
-    response = []
     logger.info "search criteria: #{search_criteria}"
-    loop do
-      search_criteria[:offset] = offset
-      counts, result = query_each(search_criteria)
-      response += result
-      logger.info "query (remain %s)" % (counts - offset < 0? 0 : counts - offset)
-      offset += 200
-      break if offset > counts
-    end
-    return response
+    query_each(search_criteria)
   end
 
   def query_each(search_criteria)
-    raise NotImplementedError.new("#{self.class}##{__method__} is not implmented.")
+    raise NotImplementedError.new("#{self.class}##{__method__} is not implemented.")
   end
 
   def get_profile
-      raise NotImplementedError.new("#{self.class}##{__method__} is not implmented.")
+    raise NotImplementedError.new("#{self.class}##{__method__} is not implemented.")
   end
 end
 

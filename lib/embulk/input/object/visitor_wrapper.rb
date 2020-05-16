@@ -9,7 +9,7 @@ class VisitorWrapper < ObjectWrapper
   end
 
   def get_profile
-    result = [
+    [
         {:name => "id", :type => :long},
         {:name => "page_view_count", :type => :long},
         {:name => "ip_address", :type => :string},
@@ -22,8 +22,6 @@ class VisitorWrapper < ObjectWrapper
         {:name => "created_at", :type => :timestamp},
         {:name => "updated_at", :type => :timestamp},
     ]
-
-    return result
   end
 end
 

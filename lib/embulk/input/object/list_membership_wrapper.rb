@@ -9,7 +9,7 @@ class ListMembershipWrapper < ObjectWrapper
   end
 
   def get_profile
-    result = [
+    [
         {:name => "id", :type => :long},
         {:name => "list_id", :type => :long},
         {:name => "prospect_id", :type => :long},
@@ -17,7 +17,6 @@ class ListMembershipWrapper < ObjectWrapper
         {:name => "created_at", :type => :timestamp},
         {:name => "updated_at", :type => :timestamp},
     ]
-    return result
   end
 end
 

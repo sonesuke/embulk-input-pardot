@@ -16,25 +16,36 @@ module Embulk
             "user_key" => config.param("user_key", :string), # string, required
             "object" => config.param("object", :string), # string, required
             "timezone" => config.param("timezone", :string), #string, required
-            "updated_after" => config.param("updated_after", :string, default: nil), # string
             "from_date" => config.param("from_date", :string, default: nil),
             "skip_columns" => config.param("skip_columns", :array, default: []),
             "columns" => config.param("columns", :array, default: []),
+            "execution_at" => Time.now,
         }
+        if not task["from_date"].nil? then
+          tz = TZInfo::Timezone.get(task["timezone"])
+          task["updated_after"] = tz.to_local(Time.parse(task["from_date"])).strftime("%Y-%m-%d %H:%M:%S")
+        end
+
+        counts = get_counts(task)
         columns = task["columns"].size > 0 ? create_from_config(task) : create_from_profile(task)
-        resume(task, columns, 1, &control)
+        resume(task, columns, counts / 200 + 1, &control)
       end
 
       def self.resume(task, columns, count, &control)
-        task_reports = yield(task, columns, count)
-        task_report = task_reports.first
-        next_to_date = Time.parse(task_report[:to_date])
-        next_config_diff = {from_date: next_to_date.to_s}
+        yield(task, columns, count)
+        next_config_diff = {from_date: task["execution_at"].to_s}
         return next_config_diff
       end
 
+      def self.get_counts(task)
+        wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"], Embulk.logger
+        counts, rows = wrapper.query({:updated_after => task["updated_after"], :limit => 1}, Embulk.logger)
+        Embulk.logger.info "#{counts} records."
+        counts
+      end
+
       def self.create_from_config(task)
-        return task["columns"].map.with_index { |column, i| Column.new(i, column['name'], column['type'].to_sym) }
+        task["columns"].map.with_index { |column, i| Column.new(i, column['name'], column['type'].to_sym) }
       end
 
       def self.create_from_profile(task)
@@ -42,11 +53,20 @@ module Embulk
         wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"], Embulk.logger
         fields = wrapper.get_profile()
         if not task["skip_columns"].nil? then
-          task["skip_columns"].each do | skip_column |
-            fields = fields.select {|field| not /#{skip_column["pattern"]}/.match(field[:name])}
-          end
+          fields = filter_fields(fields, task["object"], task["skip_columns"])
         end
-        return fields.map.with_index { |field, i| Column.new(i, field[:name], field[:type]) }
+        fields.map.with_index { |field, i| Column.new(i, field[:name], field[:type]) }
+      end
+
+      def self.filter_fields(fields, object, skip_columns)
+        skip_columns.each do | skip_column |
+          if skip_column.has_key?("ignore") and skip_column["ignore"].count(object) then
+            Embulk.logger.info "pattern '#{skip_column["pattern"]}' is ignored."
+            next
+          end
+          fields = fields.select {|field| not /^#{skip_column["pattern"]}$/.match(field[:name])}
+        end
+        fields
       end
 
       # TODO
@@ -64,28 +84,22 @@ module Embulk
         @user_name = task["user_name"]
         @password = task["password"]
         @user_key = task["user_key"]
+        @object = task["object"]
+        @updated_after = task["updated_after"]
+        @offset = index * 200 # 200 is maxsize of Pardot query API
       end
 
       def run
-        wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"], Embulk.logger
-        execution_at = Time.now
-        search_criteria = {}
-        if not task["from_date"].nil? then
-          tz = TZInfo::Timezone.get(task["timezone"])
-          search_criteria[:updated_after] = tz.to_local(Time.parse(task["from_date"])).strftime("%Y-%m-%d %H:%M:%S")
-        end
-        if not task["updated_after"].nil? then
-          search_criteria[:updated_after] = task["updated_after"]
-        end
-        rows = wrapper.query(search_criteria, Embulk.logger)
-
+        wrapper = WrapperFactory.create @object, @user_name, @password, @user_key, Embulk.logger
+        search_criteria = {:offset => @offset, :updated_after => @updated_after}
+        counts, rows = wrapper.query(search_criteria, Embulk.logger)
         rows.each do |row|
           result = schema.map { |column| evaluate_column(column, row) }
           page_builder.add(result)
         end
         page_builder.finish
 
-        task_report = {to_date: execution_at}
+        task_report = {}
         return task_report
       end
 
@@ -106,7 +120,7 @@ module Embulk
             return value
           end
         rescue
-          Embulk.logger.info "#{column.name}:#{row[column.name]} is relaced by null."
+          Embulk.logger.info "#{column.name}:#{row[column.name]} is replaced by null."
           return nil
         end
       end

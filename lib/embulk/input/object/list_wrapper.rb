@@ -9,7 +9,7 @@ class ListWrapper < ObjectWrapper
   end
 
   def get_profile
-    result = [
+    [
         {:name => "id", :type => :long},
         {:name => "name", :type => :string},
         {:name => "is_public", :type => :boolean},
@@ -20,7 +20,6 @@ class ListWrapper < ObjectWrapper
         {:name => "created_at", :type => :timestamp},
         {:name => "updated_at", :type => :timestamp},
     ]
-    return result
   end
 end
 
