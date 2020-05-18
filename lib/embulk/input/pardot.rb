@@ -60,7 +60,7 @@ module Embulk
 
       def self.filter_fields(fields, object, skip_columns)
         skip_columns.each do | skip_column |
-          if skip_column.has_key?("ignore") and skip_column["ignore"].count(object) then
+          if skip_column.has_key?("ignore") and skip_column["ignore"].count(object) > 0 then
             Embulk.logger.info "pattern '#{skip_column["pattern"]}' is ignored."
             next
           end
