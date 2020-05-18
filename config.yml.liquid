@@ -1,10 +1,13 @@
+exec:
+  max_threads: 4
+
 in:
   type: pardot
   user_name: {{ env.PARDOT_USER_NAME }}
   password: {{ env.PARDOT_PASSWORD }}
   user_key: {{ env.PARDOT_USER_KEY }}
   timezone: Asia/Tokyo
-  object: prospect
+  object: visitor
   skip_columns:
     - {pattern: .*name}
     - {pattern: email, ignore: [visitor, prospect]}

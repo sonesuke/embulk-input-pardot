@@ -49,6 +49,9 @@ class VisitorActivityWrapper < ObjectWrapper
   def query_each(search_criteria)
     response = @client.visitor_activities.query(search_criteria)
     if response.has_key?("visitor_activity") then
+      if response["visitor_activity"].kind_of? Hash then
+        response["visitor_activity"] = [response["visitor_activity"]]
+      end
       response["visitor_activity"].each do |activity|
         activity["type"] = type_map.has_key?(activity["type"]) ? type_map[activity["type"]] : "Other"
       end
