@@ -26,7 +26,13 @@ If your local thread executor suggests `max_threads` above to 5,
 please tell the limit to embulk like the following.
 
 ```
-embulk -J-Dembulk.max_threads=4 run  config.yml
+exec:
+  max_threads: 4
+
+in:
+  type: pardot
+  user_name: <your user name>
+  password: <your password>
 ```
 
 ## Object
