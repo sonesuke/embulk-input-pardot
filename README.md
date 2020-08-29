@@ -40,8 +40,10 @@ in:
 - list_membership
 - list
 - prospect
-- visitor_activity
 - visitor 
+- visitor_activity
+- visit
+- visitor_page_view
 
 ## Skip column
 

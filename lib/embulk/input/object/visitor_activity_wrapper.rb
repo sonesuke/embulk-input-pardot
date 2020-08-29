@@ -46,19 +46,19 @@ class VisitorActivityWrapper < ObjectWrapper
     }
   end
 
-  def query_each(search_criteria)
+  def query(search_criteria)
     response = @client.visitor_activities.query(search_criteria)
-    if response.has_key?("visitor_activity") then
-      if response["visitor_activity"].kind_of? Hash then
-        response["visitor_activity"] = [response["visitor_activity"]]
-      end
-      response["visitor_activity"].each do |activity|
-        activity["type"] = type_map.has_key?(activity["type"]) ? type_map[activity["type"]] : "Other"
-      end
-      return response["total_results"], response["visitor_activity"]
-    else
-      return response["total_results"], []
+    response["visitor_activity"] = normarize_as_array(response["visitor_activity"])
+    response["visitor_activity"].each do |activity|
+      activity["type"] = type_map.has_key?(activity["type"]) ? type_map[activity["type"]] : "Other"
     end
+    response["visitor_activity"]
+  end
+
+  def get_counts(search_criteria)
+    search_criteria[:limit] = 1
+    response = @client.visitor_activities.query(search_criteria)
+    return response["total_results"]
   end
 
   def get_profile
@@ -80,6 +80,7 @@ class VisitorActivityWrapper < ObjectWrapper
         {:name => "multivariate_test_variation_id", :type => :long},
         {:name => "visitor_page_view_id", :type => :long},
         {:name => "file_id", :type => :long},
+        {:name => "visit_id", :type => :long},
         {:name => "custom_redirect_id", :type => :long},
         {:name => "created_at", :type => :timestamp},
     ]

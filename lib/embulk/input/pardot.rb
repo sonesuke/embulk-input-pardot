@@ -39,7 +39,7 @@ module Embulk
 
       def self.get_counts(task)
         wrapper = WrapperFactory.create task["object"], task["user_name"], task["password"], task["user_key"], Embulk.logger
-        counts, rows = wrapper.query({:updated_after => task["updated_after"], :limit => 1}, Embulk.logger)
+        counts = wrapper.get_counts({:updated_after => task["updated_after"]})
         Embulk.logger.info "#{counts} records."
         counts
       end
@@ -92,7 +92,7 @@ module Embulk
       def run
         wrapper = WrapperFactory.create @object, @user_name, @password, @user_key, Embulk.logger
         search_criteria = {:offset => @offset, :updated_after => @updated_after}
-        counts, rows = wrapper.query(search_criteria, Embulk.logger)
+        rows = wrapper.query(search_criteria)
         rows.each do |row|
           result = schema.map { |column| evaluate_column(column, row) }
           page_builder.add(result)
