@@ -3,9 +3,15 @@ require_relative 'object_wrapper'
 
 class ListMembershipWrapper < ObjectWrapper
 
-  def query_each(search_criteria)
+  def query(search_criteria)
     response = @client.list_memberships.query(search_criteria)
-    return response["total_results"], response.has_key?("list_membership") ? response["list_membership"]: []
+    normarize_as_array(response["list_membership"])
+  end
+
+  def get_counts(search_criteria)
+    search_criteria[:limit] = 1
+    response = @client.list_memberships.query(search_criteria)
+    response["total_results"]
   end
 
   def get_profile

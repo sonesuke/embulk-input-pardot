@@ -17,12 +17,18 @@ class ObjectWrapper
     Pardot::Client.http_proxy(parsed.host, parsed.port, parsed.user,parsed.password)
   end
 
-  def query(search_criteria, logger)
-    logger.info "search criteria: #{search_criteria}"
-    query_each(search_criteria)
+  def normarize_as_array(value)
+    if value == nil then
+      return []
+    end
+    return value.kind_of?(Array) ? value: [value]
   end
 
-  def query_each(search_criteria)
+  def get_counts(search_criteria)
+    raise NotImplementedError.new("#{self.class}##{__method__} is not implemented.")
+  end
+
+  def query(search_criteria)
     raise NotImplementedError.new("#{self.class}##{__method__} is not implemented.")
   end
 
