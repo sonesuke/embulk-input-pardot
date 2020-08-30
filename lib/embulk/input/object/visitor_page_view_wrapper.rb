@@ -21,7 +21,11 @@ class VisitorPageViewWrapper < ObjectWrapper
     visits.each do |visit|
       visitor_page_views = visit["visitor_page_views"]
       if visitor_page_views.kind_of? Hash then
-        page_views.concat normarize_as_array(visitor_page_views["visitor_page_view"])
+        page_view = normarize_as_array(visitor_page_views["visitor_page_view"])
+        page_view.each do |page_view|
+          page_view["visit_id"] = visit["id"]
+        end
+        page_views.concat page_view
       end
     end
     page_views
@@ -43,6 +47,7 @@ class VisitorPageViewWrapper < ObjectWrapper
         {:name => "id", :type => :long},
         {:name => "url", :type => :string},
         {:name => "title", :type => :string},
+        {:name => "visit_id", :type => :long},
         {:name => "created_at", :type => :timestamp},
     ]
   end
